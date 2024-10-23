@@ -85,7 +85,7 @@ export const Mario: FC<MarioProps> = ({ onPositionUpdate, initialState }) => {
       nextState.vy += GRAVITY * delta;
 
       // Điều chỉnh độ cao mặt đất để phù hợp với nền gạch
-      const GROUND_LEVEL = 450; // Điều chỉnh số này để phù hợp với background
+      const GROUND_LEVEL = 500; // Điều chỉnh số này để phù hợp với background
       if (nextState.y > GROUND_LEVEL) {
         nextState.y = GROUND_LEVEL;
         nextState.vy = 0;
