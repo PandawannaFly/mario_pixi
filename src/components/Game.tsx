@@ -54,7 +54,7 @@ export const Game: FC = () => {
     newState: PlayerState,
     oldState: PlayerState
   ): PlayerState => {
-    // Tính toán các cạnh của Mario và pipe
+    
     const marioLeft = marioRect.x;
     const marioRight = marioRect.x + marioRect.width;
     const marioTop = marioRect.y;
@@ -110,7 +110,7 @@ export const Game: FC = () => {
           vx: 0
         };
       }
-      // Nếu không xác định được hướng rõ ràng, ưu tiên đẩy theo trục có khoảng chồng lấn nhỏ hơn
+      
       else if (overlapX < overlapY) {
         return {
           ...newState,
@@ -226,7 +226,7 @@ export const Game: FC = () => {
               height: 50
             };
 
-            // Apply gravity
+            //
             newState.vy = newState.vy + GRAVITY;
 
             // Lưu trạng thái hiện tại trước khi cập nhật
