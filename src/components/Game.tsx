@@ -187,7 +187,7 @@ export const Game: FC = () => {
 // Xử lý toggle audio
 const toggleAudio = useCallback(() => {
   if (!isAudioInitialized) {
-    // Lần đầu click: khởi tạo audio
+    // Lần đầu click
     if (backgroundMusicRef.current) {
       backgroundMusicRef.current.play()
         .then(() => {
@@ -197,7 +197,7 @@ const toggleAudio = useCallback(() => {
         .catch(console.error);
     }
   } else {
-    // Những lần click sau: toggle mute/unmute
+    // Những lần click sau
     if (backgroundMusicRef.current) {
       if (isMuted) {
         backgroundMusicRef.current.play();
@@ -228,20 +228,17 @@ const toggleAudio = useCallback(() => {
             <>
               {isMuted ? (
                 <>
-                  
                   Unmute
                 </>
               ) : (
                 <>
-                  
                   Mute
                 </>
               )}
             </>
           ) : (
             <>
-    
-              Start Game with Sound
+              play game with Sound
             </>
           )}
         </button>
