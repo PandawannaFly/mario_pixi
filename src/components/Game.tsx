@@ -1,10 +1,12 @@
 import { Container, Stage } from '@pixi/react';
-import { FC, useEffect, useState, useCallback } from 'react';
+import { FC, useEffect, useState, useCallback, useRef } from 'react';
 import { Background } from './Background';
 import { Mario } from './Mario';
 import { Coin } from './Coin';
 import { Pipe } from './Pipe';
 import { GameState, PlayerState, CoinObject, ObstacleObject, Position, Size } from '../types';
+import styles from './Game.module.css';
+
 
 export const Game: FC = () => {
   const [gameState, setGameState] = useState<GameState>({
@@ -21,6 +23,10 @@ export const Game: FC = () => {
     direction: 'right',
     isMoving: false
   });
+  const [isMuted, setIsMuted] = useState(false);
+  const [isAudioInitialized, setIsAudioInitialized] = useState(false);
+  const backgroundMusicRef = useRef<HTMLAudioElement | null>(null);
+  const coinSoundRef = useRef<HTMLAudioElement | null>(null);
 
   const GRAVITY = 0.5;
   const JUMP_FORCE = -15;
@@ -162,16 +168,50 @@ export const Game: FC = () => {
     });
   }, [playerState, coins, checkCollision, collectCoin]);
 
-  useEffect(() => {
-    const music = new Audio('/assets/overworld.mp3');
-    music.loop = true;
-    music.volume = 0.3;
-    music.play();
+ // Khởi tạo audio
+ useEffect(() => {
+  backgroundMusicRef.current = new Audio('/assets/overworld.mp3');
+  backgroundMusicRef.current.loop = true;
+  backgroundMusicRef.current.volume = 0.3;
 
-    return () => {
-      music.pause();
-    };
-  }, []);
+  coinSoundRef.current = new Audio('/assets/coin.mp3');
+  coinSoundRef.current.volume = 0.5;
+
+  return () => {
+    if (backgroundMusicRef.current) {
+      backgroundMusicRef.current.pause();
+    }
+  };
+}, []);
+
+// Xử lý toggle audio
+const toggleAudio = useCallback(() => {
+  if (!isAudioInitialized) {
+    // Lần đầu click: khởi tạo audio
+    if (backgroundMusicRef.current) {
+      backgroundMusicRef.current.play()
+        .then(() => {
+          setIsAudioInitialized(true);
+          setIsMuted(false);
+        })
+        .catch(console.error);
+    }
+  } else {
+    // Những lần click sau: toggle mute/unmute
+    if (backgroundMusicRef.current) {
+      if (isMuted) {
+        backgroundMusicRef.current.play();
+        backgroundMusicRef.current.volume = 0.3;
+        coinSoundRef.current!.volume = 0.5;
+      } else {
+        backgroundMusicRef.current.pause();
+        backgroundMusicRef.current.volume = 0;
+        coinSoundRef.current!.volume = 0;
+      }
+      setIsMuted(!isMuted);
+    }
+  }
+}, [isAudioInitialized, isMuted]);
 
   useEffect(() => {
     checkCoinCollision();
@@ -179,6 +219,33 @@ export const Game: FC = () => {
 
   return (
     <div className="game-container">
+      <div className={styles.audioPrompt}>
+        <button 
+          className={`${styles.button} ${isMuted ? styles.muted : ''}`}
+          onClick={toggleAudio}
+        >
+          {isAudioInitialized ? (
+            <>
+              {isMuted ? (
+                <>
+                  
+                  Unmute
+                </>
+              ) : (
+                <>
+                  
+                  Mute
+                </>
+              )}
+            </>
+          ) : (
+            <>
+    
+              Start Game with Sound
+            </>
+          )}
+        </button>
+      </div>
       <div className="scorebar">
         <p>
           <span>MARIO</span>
