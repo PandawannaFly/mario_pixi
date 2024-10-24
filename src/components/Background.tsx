@@ -11,13 +11,13 @@ const BACKGROUND_LAYERS = [
 const FOREGROUND_LAYER = 'mario_layer_1.gif';
 
 interface BackgroundProps {
-  children?: React.ReactNode; // Allow passing children for mid-ground elements
+  children?: React.ReactNode; 
 }
 
 export const Background: FC<BackgroundProps> = ({ children }) => {
   return (
     <Container sortableChildren={true}>
-      {/* Background layers (back) */}
+     
       {BACKGROUND_LAYERS.map((layer, index) => (
         <Sprite
           key={layer}
@@ -27,16 +27,16 @@ export const Background: FC<BackgroundProps> = ({ children }) => {
           x={0}
           y={0}
           alpha={1}
-          zIndex={index} // Ensure proper stacking of background layers
+          zIndex={index} 
         />
       ))}
 
-      {/* Mid-ground elements (coins, pipes, etc) */}
+      
       <Container zIndex={BACKGROUND_LAYERS.length}>
         {children}
       </Container>
 
-      {/* Foreground layer (front) */}
+     
       <Sprite
         image={`/assets/${FOREGROUND_LAYER}`}
         width={8510}

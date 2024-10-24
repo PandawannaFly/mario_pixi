@@ -28,9 +28,7 @@ export const Game: FC = () => {
   const backgroundMusicRef = useRef<HTMLAudioElement | null>(null);
   const coinSoundRef = useRef<HTMLAudioElement | null>(null);
 
-  const GRAVITY = 0.5;
-  const JUMP_FORCE = -15;
-  const GROUND_Y = 500;
+  
 
   const [coins, setCoins] = useState<CoinObject[]>([
     { id: 1, type: 'coin', x: 300, y: 400, width: 30, height: 30, isCollected: false },
@@ -40,9 +38,9 @@ export const Game: FC = () => {
   ]);
 
   const pipes: ObstacleObject[] = [
-    { id: 1, type: 'obstacle', x: 1160, y: 550, width: 70, height: 120 },
-    { id: 2, type: 'obstacle', x: 1570, y: 550, width: 70, height: 200 },
-    { id: 3, type: 'obstacle', x: 1870, y: 550, width: 70, height: 180 },
+    { id: 1, type: 'obstacle', x: 1162, y: 550, width: 70, height: 117 },
+    { id: 2, type: 'obstacle', x: 1568, y: 550, width: 70, height: 150 },
+    { id: 3, type: 'obstacle', x: 1885, y: 550, width: 70, height: 180 },
   ];
 
   const checkCollision = useCallback((rect1: Position & Size, rect2: Position & Size): boolean => {
@@ -54,87 +52,7 @@ export const Game: FC = () => {
     );
   }, []);
 
-  const handleCollisionWithPipe = useCallback((
-    marioRect: Position & Size, 
-    pipe: ObstacleObject, 
-    newState: PlayerState,
-    oldState: PlayerState
-  ): PlayerState => {
-    
-    const marioLeft = marioRect.x;
-    const marioRight = marioRect.x + marioRect.width;
-    const marioTop = marioRect.y;
-    const marioBottom = marioRect.y + marioRect.height;
-
-    const pipeLeft = pipe.x;
-    const pipeRight = pipe.x + pipe.width;
-    const pipeTop = pipe.y;
-    const pipeBottom = pipe.y + pipe.height;
-
-    // Tính toán khoảng cách chồng lấn
-    const overlapX = Math.min(marioRight - pipeLeft, pipeRight - marioLeft);
-    const overlapY = Math.min(marioBottom - pipeTop, pipeBottom - marioTop);
-
-    // Xác định hướng va chạm dựa trên vị trí cũ của Mario
-    const wasAbove = oldState.y + marioRect.height <= pipe.y;
-    const wasBelow = oldState.y >= pipe.y + pipe.height;
-    const wasLeft = oldState.x + marioRect.width <= pipe.x;
-    const wasRight = oldState.x >= pipe.x + pipe.width;
-
-    // Nếu có va chạm
-    if (checkCollision(marioRect, pipe)) {
-      // Va chạm từ trên xuống
-      if (wasAbove && newState.vy > 0) {
-        return {
-          ...newState,
-          y: pipeTop - marioRect.height,
-          vy: 0,
-          isJumping: false
-        };
-      }
-      // Va chạm từ dưới lên
-      else if (wasBelow && newState.vy < 0) {
-        return {
-          ...newState,
-          y: pipeBottom,
-          vy: 0
-        };
-      }
-      // Va chạm từ bên trái
-      else if (wasLeft) {
-        return {
-          ...newState,
-          x: pipeLeft - marioRect.width,
-          vx: 0
-        };
-      }
-      // Va chạm từ bên phải
-      else if (wasRight) {
-        return {
-          ...newState,
-          x: pipeRight,
-          vx: 0
-        };
-      }
-      
-      else if (overlapX < overlapY) {
-        return {
-          ...newState,
-          x: newState.vx > 0 ? pipeLeft - marioRect.width : pipeRight,
-          vx: 0
-        };
-      } else {
-        return {
-          ...newState,
-          y: newState.vy > 0 ? pipeTop - marioRect.height : pipeBottom,
-          vy: 0,
-          isJumping: newState.vy > 0 ? false : newState.isJumping
-        };
-      }
-    }
-
-    return newState;
-  }, [checkCollision]);
+ 
 
   const collectCoin = useCallback((coinId: number) => {
     const coinSound = new Audio('/assets/coin.mp3');
@@ -168,7 +86,7 @@ export const Game: FC = () => {
     });
   }, [playerState, coins, checkCollision, collectCoin]);
 
- // Khởi tạo audio
+ // init audio
  useEffect(() => {
   backgroundMusicRef.current = new Audio('/assets/overworld.mp3');
   backgroundMusicRef.current.loop = true;
@@ -184,10 +102,10 @@ export const Game: FC = () => {
   };
 }, []);
 
-// Xử lý toggle audio
+// toggle audio
 const toggleAudio = useCallback(() => {
   if (!isAudioInitialized) {
-    // Lần đầu click
+    // first click
     if (backgroundMusicRef.current) {
       backgroundMusicRef.current.play()
         .then(() => {
@@ -197,7 +115,7 @@ const toggleAudio = useCallback(() => {
         .catch(console.error);
     }
   } else {
-    // Những lần click sau
+    // after click
     if (backgroundMusicRef.current) {
       if (isMuted) {
         backgroundMusicRef.current.play();
@@ -280,49 +198,11 @@ const toggleAudio = useCallback(() => {
           </Background>
 
           <Container zIndex={2}>
-        <Mario 
-          initialState={playerState}
-          onPositionUpdate={(newState) => {
-            const marioRect: Position & Size = {
-              x: newState.x - 25,
-              y: newState.y - 25,
-              width: 50,
-              height: 50
-            };
-
-            //
-            newState.vy = newState.vy + GRAVITY;
-
-            // Lưu trạng thái hiện tại trước khi cập nhật
-            const oldState = { ...playerState };
-
-            // Tính toán vị trí mới trước khi kiểm tra va chạm
-            let finalState = {
-              ...newState,
-              x: newState.x + newState.vx,
-              y: newState.y + newState.vy
-            };
-
-            // Kiểm tra va chạm với từng pipe
-            for (const pipe of pipes) {
-              finalState = handleCollisionWithPipe(
-                { ...marioRect, x: finalState.x - 25, y: finalState.y - 25 },
-                pipe,
-                finalState,
-                oldState
-              );
-            }
-
-            // Check ground collision sau khi đã xử lý va chạm với pipe
-            if (finalState.y > GROUND_Y) {
-              finalState.y = GROUND_Y;
-              finalState.vy = 0;
-              finalState.isJumping = false;
-            }
-
-            setPlayerState(finalState);
-          }}
-        />
+          <Mario 
+            initialState={playerState}
+            onPositionUpdate={setPlayerState}
+            pipes={pipes} 
+          />
       </Container>
         </Container>
       </Stage>

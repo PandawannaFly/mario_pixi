@@ -1,13 +1,14 @@
 import { Sprite, useTick } from '@pixi/react';
 import { FC, useCallback, useEffect, useState } from 'react';
-import { PlayerState } from '../types';
+import { PlayerState, ObstacleObject } from '../types';
 
 interface MarioProps {
   onPositionUpdate: (position: PlayerState) => void;
   initialState: PlayerState;
+  pipes: ObstacleObject[];
 }
 
-export const Mario: FC<MarioProps> = ({ onPositionUpdate, initialState }) => {
+export const Mario: FC<MarioProps> = ({ onPositionUpdate, initialState, pipes }) => {
   const [state, setState] = useState<PlayerState>(initialState);
   const GRAVITY = 0.5;
   const JUMP_FORCE = -10;
@@ -16,9 +17,78 @@ export const Mario: FC<MarioProps> = ({ onPositionUpdate, initialState }) => {
   const MARIO_WIDTH = 32; 
   const MARIO_HEIGHT = 32;
 
-  //giới hạn màn hình
   const SCREEN_LEFT_BOUNDARY = MARIO_WIDTH / 2; 
-  const SCREEN_RIGHT_BOUNDARY = 1900 - MARIO_WIDTH / 2; 
+  const SCREEN_RIGHT_BOUNDARY = 1900 - MARIO_WIDTH / 2;
+
+  const checkPipeCollision = (
+    newX: number,
+    newY: number,
+    newVy: number,  
+    currentState: PlayerState
+  ): { x: number; y: number; vx: number; vy: number; isJumping: boolean } => {
+    // hitbox Mario
+    const marioBox = {
+      left: newX - MARIO_WIDTH / 2,
+      right: newX + MARIO_WIDTH / 2,
+      top: newY - MARIO_HEIGHT / 2,
+      bottom: newY + MARIO_HEIGHT / 2
+    };
+
+    // curret Mario
+    const currentBox = {
+      left: currentState.x - MARIO_WIDTH / 2,
+      right: currentState.x + MARIO_WIDTH / 2,
+      top: currentState.y - MARIO_HEIGHT / 2,
+      bottom: currentState.y + MARIO_HEIGHT / 2
+    };
+
+    let finalX = newX;
+    let finalY = newY;
+    let finalVx = currentState.vx;
+    let finalVy = newVy;  
+    let isJumping = currentState.isJumping;
+
+    for (const pipe of pipes) {
+      // create hitbox pipe
+      const pipeBox = {
+        left: pipe.x - pipe.width / 2,
+        right: pipe.x + pipe.width / 2,
+        top: pipe.y - pipe.height,
+        bottom: pipe.y
+      };
+
+      // check collision
+      if (
+        marioBox.right > pipeBox.left &&
+        marioBox.left < pipeBox.right &&
+        marioBox.bottom > pipeBox.top &&
+        marioBox.top < pipeBox.bottom
+      ) {
+        // dectect direct collision
+        const wasAbove = currentBox.bottom <= pipeBox.top;
+        const wasBelow = currentBox.top >= pipeBox.bottom;
+        const wasLeft = currentBox.right <= pipeBox.left;
+        const wasRight = currentBox.left >= pipeBox.right;
+
+        if (wasAbove) {
+          finalY = pipeBox.top - MARIO_HEIGHT / 2;
+          finalVy = 0;
+          isJumping = false;
+        } else if (wasBelow) {
+          finalY = pipeBox.bottom + MARIO_HEIGHT / 2;
+          finalVy = 0;
+        } else if (wasLeft) {
+          finalX = pipeBox.left - MARIO_WIDTH / 2;
+          finalVx = 0;
+        } else if (wasRight) {
+          finalX = pipeBox.right + MARIO_WIDTH / 2;
+          finalVx = 0;
+        }
+      }
+    }
+
+    return { x: finalX, y: finalY, vx: finalVx, vy: finalVy, isJumping };
+  };
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     switch(e.key.toLowerCase()) {
@@ -81,22 +151,30 @@ export const Mario: FC<MarioProps> = ({ onPositionUpdate, initialState }) => {
 
   useTick((delta) => {
     setState(prev => {
-      const nextState = { ...prev };
+      // caculate the Vy
+      const newVy = prev.vy + GRAVITY * delta;  
       
-      //
-      const newX = nextState.x + nextState.vx * delta;
-      
+      // new cordinates
+      const newX = prev.x + prev.vx * delta;
+      const newY = prev.y + prev.vy * delta;  
+
+      // check screen boundaries
+      let boundedX = Math.max(SCREEN_LEFT_BOUNDARY, Math.min(newX, SCREEN_RIGHT_BOUNDARY));
+
+      // check collision with pipes
+      const collision = checkPipeCollision(boundedX, newY, newVy, prev);
+
       // 
-      if (newX >= SCREEN_LEFT_BOUNDARY && newX <= SCREEN_RIGHT_BOUNDARY) {
-        nextState.x = newX;
-      } else {
-        // 
-        nextState.vx = 0;
-      }
+      const nextState = {
+        ...prev,
+        x: collision.x,
+        y: collision.y,
+        vx: collision.vx,
+        vy: collision.vy,
+        isJumping: collision.isJumping
+      };
 
-      nextState.y += nextState.vy * delta;
-      nextState.vy += GRAVITY * delta;
-
+      // 
       const GROUND_LEVEL = 500;
       if (nextState.y > GROUND_LEVEL) {
         nextState.y = GROUND_LEVEL;
