@@ -13,9 +13,12 @@ export const Mario: FC<MarioProps> = ({ onPositionUpdate, initialState }) => {
   const JUMP_FORCE = -10;
   const MOVE_SPEED = 3;
   
-  
   const MARIO_WIDTH = 32; 
-  const MARIO_HEIGHT = 32; 
+  const MARIO_HEIGHT = 32;
+
+  //giới hạn màn hình
+  const SCREEN_LEFT_BOUNDARY = MARIO_WIDTH / 2; 
+  const SCREEN_RIGHT_BOUNDARY = 1900 - MARIO_WIDTH / 2; 
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     switch(e.key.toLowerCase()) {
@@ -80,12 +83,21 @@ export const Mario: FC<MarioProps> = ({ onPositionUpdate, initialState }) => {
     setState(prev => {
       const nextState = { ...prev };
       
-      nextState.x += nextState.vx * delta;
+      //
+      const newX = nextState.x + nextState.vx * delta;
+      
+      // 
+      if (newX >= SCREEN_LEFT_BOUNDARY && newX <= SCREEN_RIGHT_BOUNDARY) {
+        nextState.x = newX;
+      } else {
+        // 
+        nextState.vx = 0;
+      }
+
       nextState.y += nextState.vy * delta;
       nextState.vy += GRAVITY * delta;
 
-      // Điều chỉnh độ cao mặt đất để phù hợp với nền gạch
-      const GROUND_LEVEL = 500; // Điều chỉnh số này để phù hợp với background
+      const GROUND_LEVEL = 500;
       if (nextState.y > GROUND_LEVEL) {
         nextState.y = GROUND_LEVEL;
         nextState.vy = 0;
